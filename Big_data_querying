@@ -1,0 +1,869 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "Copy of Untitled3.ipynb",
+      "provenance": [],
+      "collapsed_sections": [],
+      "authorship_tag": "ABX9TyMyuot0p2454vhHei0Zah6c",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/skotak2/Big-Data-Map-Reduce/blob/master/Big_data_querying\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "qHuLWOGH_yPe",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "from google.colab import drive\n",
+        "drive.mount('/content/drive')"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "mUE0ZE1xAAPr",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "!apt-get install openjdk-8-jdk-headless -qq > /dev/null"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "Zjz4i4trAdXi",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "!wget -q http://apache.mirrors.pair.com/spark/spark-2.4.5/spark-2.4.5-bin-hadoop2.7.tgz"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "gkFaK4yoAq29",
+        "colab_type": "code",
+        "outputId": "6bd6ca8e-67a5-4c81-bef1-b7efd71b6945",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 34
+        }
+      },
+      "source": [
+        "!ls"
+      ],
+      "execution_count": 5,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "drive  sample_data  spark-2.4.5-bin-hadoop2.7.tgz\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "UsMIxMslAzJw",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "!tar -xvf spark-2.4.5-bin-hadoop2.7.tgz"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "ri8wvPwSA3V3",
+        "colab_type": "code",
+        "outputId": "2ea7aaa5-c153-4571-aa79-9d38182ceaf3",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 34
+        }
+      },
+      "source": [
+        "!ls"
+      ],
+      "execution_count": 7,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "drive  sample_data  spark-2.4.5-bin-hadoop2.7  spark-2.4.5-bin-hadoop2.7.tgz\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "wm8YWrLRBStq",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "!pip install -q findspark"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "QOb93linBbpX",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "import os\n",
+        "os.environ[\"JAVA_HOME\"] = \"/usr/lib/jvm/java-8-openjdk-amd64\"\n",
+        "os.environ[\"SPARK_HOME\"] = \"/content/spark-2.4.5-bin-hadoop2.7\""
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "K3QwgoFZBk_K",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "import findspark\n",
+        "findspark.init()\n",
+        "from pyspark.sql import SparkSession\n",
+        "spark = SparkSession.builder.master(\"local[*]\").getOrCreate()\n",
+        "import pandas as pd"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "7oqTWI_jBtrv",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "sc = spark.sparkContext\n",
+        "myrdd = sc.textFile(\"/content/drive/My Drive/Amazon_Responded_Oct05.csv\", )\n",
+        "m1 = myrdd.map(lambda line: line.split(','))\n",
+        "m2 = m1.filter(lambda line: len(line)==25)\\\n",
+        "    .map(lambda line: (line[0],line[1],line[11],line[17],line[22],line[16]))\\\n",
+        "    .filter(lambda line: line[2]=='False')\\\n",
+        "    .filter(lambda line: len(line[1].split(' ')) == 6 )\\\n",
+        "    .map(lambda line: ((line[1].split(' ')[1]+line[1].split(' ')[2]),(line[0],line[2],line[3],line[4],line[5])))\\\n",
+        "    .countByKey().items()\n",
+        "list = m1.first()\n",
+        "a = []\n",
+        "a.append(list.index('id_str'))\n",
+        "a.append(list.index('tweet_created_at'))\n",
+        "a.append(list.index('user_verified'))\n",
+        "a.append(list.index('favorite_count'))\n",
+        "a.append(list.index('retweet_count'))\n",
+        "a.append(list.index('text_'))\n",
+        "a\n",
+        "dt = pd.DataFrame.from_dict(m2)\n",
+        "\n",
+        "dt.iloc[dt[1].idxmax()]\n",
+        "m3 = m1.filter(lambda line: len(line)==25)\\\n",
+        "    .map(lambda line: (line[0],line[1],line[11],line[17],line[22],line[16]))\\\n",
+        "    .filter(lambda line: line[2]=='False')\\\n",
+        "    .filter(lambda line: len(line[1].split(' ')) == 6 )\\\n",
+        "    .map(lambda line: ((line[1].split(' ')[1]+line[1].split(' ')[2]),(line[0],line[2],line[3],line[4],line[5])))\n",
+        "    m4 = m3.filter(lambda line: line[0] == 'Jan03')\\\n",
+        "     .map(lambda line: (int(line[1][2])+int(line[1][3]),line[1][0]))\\\n",
+        "     .collect()\n",
+        "     \n"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "0HW6pg_Uc7LZ",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "from pyspark import SparkContext\n",
+        "import pyspark.sql.functions\n",
+        "from pyspark.sql import SQLContext\n",
+        "import pandas as pd\n",
+        "sc = spark.sparkContext\n"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "QLjAfbF-DXIA",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "scsql = SQLContext(sc)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "Ly-hrxt5D75v",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "df = scsql.read.csv(\"/content/drive/My Drive/Amazon_Responded_Oct05.csv\", header=True)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "J55aBT_6FIOH",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "df.columns"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "s-Ao4X-CH3PM",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 207
+        },
+        "outputId": "3022de45-abb3-4326-d8cb-815b8a2d4708"
+      },
+      "source": [
+        "dt = df.select('id_str','tweet_created_at','user_verified','favorite_count','retweet_count','text')\n",
+        "dt.show(5)"
+      ],
+      "execution_count": 225,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "+--------------------+--------------------+-------------+--------------+-------------+--------------------+\n",
+            "|              id_str|    tweet_created_at|user_verified|favorite_count|retweet_count|                text|\n",
+            "+--------------------+--------------------+-------------+--------------+-------------+--------------------+\n",
+            "|'793270689780203520'|Tue Nov 01 01:57:...|        False|             0|            0|                null|\n",
+            "|'793281386912354304'|Tue Nov 01 02:39:...|         True|             0|            0|                null|\n",
+            "|'793501578766319616'|Tue Nov 01 17:14:...|        False|             0|            0|@AmazonHelp It wa...|\n",
+            "|'793501657346682880'|Tue Nov 01 17:15:...|        False|             0|            0|                null|\n",
+            "|'793502854459879424'|Tue Nov 01 17:19:...|         True|             0|            0|@SeanEPanjab Plea...|\n",
+            "+--------------------+--------------------+-------------+--------------+-------------+--------------------+\n",
+            "only showing top 5 rows\n",
+            "\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "13DyRyItLADG",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 207
+        },
+        "outputId": "65183e48-a0da-48e7-9b17-17fa0f998ebb"
+      },
+      "source": [
+        "dt1 = dt.filter(dt.user_verified == 'True')\n",
+        "dt1.show(5)"
+      ],
+      "execution_count": 41,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "+--------------------+--------------------+-------------+--------------+-------------+--------------------+\n",
+            "|              id_str|    tweet_created_at|user_verified|favorite_count|retweet_count|                text|\n",
+            "+--------------------+--------------------+-------------+--------------+-------------+--------------------+\n",
+            "|'793281386912354304'|Tue Nov 01 02:39:...|         True|             0|            0|                null|\n",
+            "|'793502854459879424'|Tue Nov 01 17:19:...|         True|             0|            0|@SeanEPanjab Plea...|\n",
+            "|'793504235400884224'|Tue Nov 01 17:25:...|         True|             0|            0|                null|\n",
+            "|'793513446633533440'|Tue Nov 01 18:02:...|         True|             0|            0|@SeanEPanjab I'm ...|\n",
+            "|'793301295255945216'|Tue Nov 01 03:59:...|         True|             0|            0|                null|\n",
+            "+--------------------+--------------------+-------------+--------------+-------------+--------------------+\n",
+            "only showing top 5 rows\n",
+            "\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "FVN4b2zMMZC0",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "split_date = pyspark.sql.functions.split(dt1['tweet_created_at'],' ') \n",
+        "sf = pyspark.sql.functions \n",
+        "df= dt1.withColumn('Month', split_date.getItem(1))\n",
+        "df=df.withColumn('Day',split_date.getItem(2))\n",
+        "df=df.withColumn('Date',sf.concat('Month','Day'))\n",
+        "df =df.select('id_str','Date','user_verified','favorite_count','retweet_count','text')"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "rpOoS_2XaRGP",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "df1 = df.groupBy(\"Date\")\\\n",
+        "     .agg( \n",
+        "          sf.count(sf.lit(1)).alias(\"Num Of Records\")\n",
+        "         )\\\n",
+        "     .orderBy(\"Num Of Records\", ascending=False)\\\n",
+        "     .show(20, False)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab_type": "code",
+        "id": "yTiTo2XniYf8",
+        "colab": {}
+      },
+      "source": [
+        "df1 = df.groupBy(\"Date\")\\\n",
+        "     .agg( \n",
+        "          sf.count(sf.lit(1)).alias(\"Num Of Records\")\n",
+        "         )\\\n",
+        "     .orderBy(\"Num Of Records\", ascending=False)\\\n",
+        "     .limit(100)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "QK87IGaOla3d",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "df_pd = df1.toPandas()"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "AolMuw9JjI53",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "dt.filter(dt.user_verified == 'True')\n",
+        "df2 = df.select('id_str','Date','user_verified','favorite_count','retweet_count','text')\\\n",
+        "      .filter(df.user_verified == 'True')\\\n",
+        "      .filter(df.Date == 'Jan03')\\\n",
+        "      .withColumn('Sum',df['favorite_count']+df['retweet_count'])\\\n",
+        "      .orderBy(\"Sum\", ascending=False)\\\n",
+        "      .limit(99)\n",
+        "\n"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "BOUpTaKNq7eU",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "df3 = df2.select('text').toPandas()"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "jskTuoQe39qZ",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "df4 = df3['text'].tolist()"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "zZxOcPYh4lci",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 86
+        },
+        "outputId": "476a89d3-2528-4b72-fac2-9de65f6522e0"
+      },
+      "source": [
+        "import nltk\n",
+        "import pandas as pd\n",
+        "nltk.download('stopwords')\n",
+        "nltk.download('punkt')\n",
+        "from nltk.tokenize import WordPunctTokenizer\n",
+        "from nltk.tokenize import sent_tokenize, word_tokenize\n",
+        "from nltk.stem import PorterStemmer \n",
+        "from nltk.corpus import stopwords\n",
+        "import string\n"
+      ],
+      "execution_count": 209,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "[nltk_data] Downloading package stopwords to /root/nltk_data...\n",
+            "[nltk_data]   Package stopwords is already up-to-date!\n",
+            "[nltk_data] Downloading package punkt to /root/nltk_data...\n",
+            "[nltk_data]   Package punkt is already up-to-date!\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "FoGeawV37fpN",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "test_list = df4\n",
+        "df6 = [i for i in test_list if i]    \n",
+        "df6 = [word_tokenize(i) for i in df6]   \n",
+        "df6 = [w for i in df6 for w in i if w.isalpha()]\n",
+        "df6\n",
+        "wordfreq = {}\n",
+        "for j in range(len(df6)):\n",
+        "    tokens = df6[j]   \n",
+        "    if tokens not in wordfreq.keys():\n",
+        "      wordfreq[tokens] = 1        \n",
+        "    else:\n",
+        "      wordfreq[tokens] += 1   \n",
+        "wordfreq         "
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "rfu0vpxjELhE",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "df_find = scsql.read.csv(\"/content/drive/My Drive/find_text.csv\", header=True)\n",
+        "df_dt = df_find.toPandas()"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "GIQpR8SaCEOR",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 466
+        },
+        "outputId": "5b2386e2-14dc-499f-a3cf-f3e571c462c3"
+      },
+      "source": [
+        "df_find = df_find.selectExpr(\"id_str as id\")\n",
+        "df_find.show()"
+      ],
+      "execution_count": 249,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "+--------------------+\n",
+            "|                  id|\n",
+            "+--------------------+\n",
+            "|'793270689780203520'|\n",
+            "|'793281386912354304'|\n",
+            "|'793299404975247360'|\n",
+            "|'793301295255945216'|\n",
+            "|'793315815411978240'|\n",
+            "|'793322306848292864'|\n",
+            "|'793322433625415680'|\n",
+            "|'793365409047023616'|\n",
+            "|'793369654878232577'|\n",
+            "|'793375905280393216'|\n",
+            "|'793376242837823488'|\n",
+            "|'793378044052406272'|\n",
+            "|'793378188416131072'|\n",
+            "|'793379112685568000'|\n",
+            "|'793381418395136000'|\n",
+            "|'793382930085253121'|\n",
+            "|'793383832720474113'|\n",
+            "|'793386133434593280'|\n",
+            "|'793386974459682816'|\n",
+            "|'793390636619759616'|\n",
+            "+--------------------+\n",
+            "only showing top 20 rows\n",
+            "\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "Y-Qwm3wHIRln",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "dt.show()"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "nkHmgkWCI31g",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "inner_join = df_find.join(dt, df_find.id == dt.id_str)\n",
+        "final = inner_join.select('id_str','text').toPandas()"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "ORNbNWvfQstT",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "final.to_csv(r\"/content/drive/My Drive/find_text_answrs.csv\")"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "SDbvlubLJaNL",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 408
+        },
+        "outputId": "4ac71a90-291d-432f-d569-348ecd6c0f5d"
+      },
+      "source": [
+        "df_final = inner_join.select('text').toPandas()\n",
+        "df_final"
+      ],
+      "execution_count": 245,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>text</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>@AmazonHelp It was purchased on https://t.co/g...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>@SeanEPanjab Please give us a call/chat so we ...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>53922</th>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>53923</th>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>53924</th>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>53925</th>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>53926</th>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>53927 rows × 1 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                                                    text\n",
+              "0                                                   None\n",
+              "1                                                   None\n",
+              "2      @AmazonHelp It was purchased on https://t.co/g...\n",
+              "3                                                   None\n",
+              "4      @SeanEPanjab Please give us a call/chat so we ...\n",
+              "...                                                  ...\n",
+              "53922                                               None\n",
+              "53923                                               None\n",
+              "53924                                               None\n",
+              "53925                                               None\n",
+              "53926                                               None\n",
+              "\n",
+              "[53927 rows x 1 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 245
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "mhrR74JoLzP6",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 408
+        },
+        "outputId": "e5c8739a-a129-4ddc-f762-9bf8a040cdf4"
+      },
+      "source": [
+        "df_dt"
+      ],
+      "execution_count": 244,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>id_str</th>\n",
+              "      <th>text</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>'793270689780203520'</td>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>'793281386912354304'</td>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>'793299404975247360'</td>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>'793301295255945216'</td>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>'793315815411978240'</td>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>...</th>\n",
+              "      <td>...</td>\n",
+              "      <td>...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>53923</th>\n",
+              "      <td>'811898317860995072'</td>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>53924</th>\n",
+              "      <td>'812174731772305409'</td>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>53925</th>\n",
+              "      <td>'812178675982602241'</td>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>53926</th>\n",
+              "      <td>'812186130116386818'</td>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>53927</th>\n",
+              "      <td>None</td>\n",
+              "      <td>None</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "<p>53928 rows × 2 columns</p>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                     id_str  text\n",
+              "0      '793270689780203520'  None\n",
+              "1      '793281386912354304'  None\n",
+              "2      '793299404975247360'  None\n",
+              "3      '793301295255945216'  None\n",
+              "4      '793315815411978240'  None\n",
+              "...                     ...   ...\n",
+              "53923  '811898317860995072'  None\n",
+              "53924  '812174731772305409'  None\n",
+              "53925  '812178675982602241'  None\n",
+              "53926  '812186130116386818'  None\n",
+              "53927                  None  None\n",
+              "\n",
+              "[53928 rows x 2 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 244
+        }
+      ]
+    }
+  ]
+}
