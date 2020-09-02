@@ -1,16 +1,14 @@
+#Importing Packages for data transformations and multi-threading
 import re
 import pandas as pd
 import threading
 import queue
 
 
-# In[2]:
-
-
-#Data Cleaning function
+#Defining data cleaning function
 def cleanData(file):
     token = []
-    #Removing the punctuations  and other irrelevant string matter
+    #Removing the punctuations  and other irrelevant string content not meant for mapping
     wform = re.compile("[a-z]+")
     for line in file:
         if len(line) > 0:
@@ -20,10 +18,7 @@ def cleanData(file):
     return token
 
 
-# In[3]:
-
-
-#Data Split function
+#Defining the data Split function
 def split_function(list):
     part = []
     for line in list:
@@ -32,47 +27,33 @@ def split_function(list):
     list2 = part[5001:]
     list3 = [list1,list2]
     return list3
-
-
-# In[4]:
-
-
-#Mappers
+    
+#Defining mapper function, two mapper function gets defined here
 def mapper1(list,map_q1):
     li = [wordl for i in list for wordl in i]
-    #mapping = {}
     mapping = []
     for i in li:
         word = i
-        #mapping[i]=1
         mapping.append("%s\t%d"%(word,1))
+    #queuing up the mapper elements
     map_q1.put(mapping)
 def mapper2(list,map_q2):
     li = [wordl for i in list for wordl in i]
-    #mapping = {}map_q1.put(mappings1)
     mapping = []
     for i in li:
         word = i
-        #mapping[i]=1
         mapping.append("%s\t%d"%(word,1))
+    #queuing up the mapper elements
     map_q2.put(mapping)
  
 
-
-# In[5]:
-
-
-#Sort by Function
+#Defining sort by function
 def Sort_function(mapping1,mapping2): 
     mapping = mapping1+mapping2
     mapping.sort()
     return mapping
 
-
-# In[6]:
-
-
-#Partition Function
+#Defining partition function
 def Partition(tosort):
     a = []
     b = []
@@ -85,11 +66,7 @@ def Partition(tosort):
     list = [a,b]
     return list
 
-
-# In[7]:
-
-
-#Reducer function
+#Defining reducer function, two reducers gets defined
 
 def Reducer1(list,red_q1):
     cur_word = None
@@ -106,6 +83,7 @@ def Reducer1(list,red_q1):
         f_count[cur_word] = cur_count
     if cur_word == word:
         f_count[cur_word] = cur_count
+    #queuing up the elements
     return red_q1.put(f_count)
 def Reducer2(list,red_q2):
     cur_word = None
@@ -122,11 +100,10 @@ def Reducer2(list,red_q2):
         f_count[cur_word] = cur_count
     if cur_word == word:
         f_count[cur_word] = cur_count
+    #queuing up the elements
     return red_q2.put(f_count)
 
-
-# In[13]:
-
+#Performing the big data map reduce using multithreading
 
 def MapReduce(Path):
         map_q1 = queue.Queue()
@@ -169,7 +146,7 @@ def MapReduce(Path):
         return Output_df
 
 
-# In[14]:
-#Mention the path of the file here
+
+#Mention the path of the file here,
 
 MapReduce(Path=' ') 
