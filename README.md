@@ -40,3 +40,5 @@ With the above concept in place, we implement the setup in the following steps:
 **Step3** : Multiple Reducers to pic from the partition and aggregate them
 
 The above steps will yield a list of outputs from the reducer, which could be concatenated and loaded into a datafram or a spreasheet
+
+The code is available on  - "mapreduce.py"
